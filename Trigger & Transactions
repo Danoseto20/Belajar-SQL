@@ -1,0 +1,49 @@
+/** Menghapus 3 Tabel item_baru, jual_item, tambah_item jika pernah terbuat */
+DROP TABLE IF EXISTS item_baru;
+DROP TABLE IF EXISTS jual_item;
+DROP TABLE IF EXISTS tambah_item;
+
+
+/** Membuat 3 Tabel baru */
+CREATE TABLE item_baru (id INTEGER PRIMARY KEY, nama_barang TEXT, stok_barang INTEGER);
+CREATE TABLE jual_item (id INTEGER PRIMARY KEY, itembaru_id INTEGER, itemtambah_id INTEGER, nb_jual TEXT, stok_jual INTEGER);
+CREATE TABLE tambah_item (id INTEGER PRIMARY KEY, itembaru2_id INTEGER, itemjual_id INTEGER, nb_tambah TEXT, stok_tambah INTEGER);
+
+/** Menambahkan barang dan stocknya menggunakan fitur Transaction */
+BEGIN TRANSACTION;
+    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Pensil', 50);
+    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Pulpen', 100);
+    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Buku Tulis', 100);
+END TRANSACTION;
+
+/** Membuat TRIGGER untuk penjualan item */
+CREATE TRIGGER newJualitem AFTER INSERT ON jual_item
+    BEGIN
+        UPDATE item_baru SET stok_barang = stok_barang - NEW.stok_jual
+        WHERE id = NEW.itembaru_id;
+   END;
+   
+/** Membuat TRIGGER untuk Penambahan Item */
+CREATE TRIGGER newTambahitem AFTER INSERT ON tambah_item
+    BEGIN
+        UPDATE item_baru SET stok_barang = stok_barang + NEW.stok_tambah
+        WHERE id = NEW.itembaru2_id;
+    END;
+
+/** Proses Penjualan barang */
+BEGIN TRANSACTION;
+INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 1, 'Pensil', 25);
+INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
+INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
+END TRANSACTION;
+
+/** Proses Penambahan barang */
+BEGIN TRANSACTION;
+    INSERT INTO tambah_item (itembaru2_id, nb_tambah, stok_tambah) VALUES ( 1, 'Pensil', 25);
+    INSERT INTO tambah_item (itembaru2_id, nb_tambah, stok_tambah) VALUES ( 2, 'Pulpen', 50);
+END TRANSACTION;
+
+/** Untuk Menampilkan Hasil Tabel */
+SELECT * FROM jual_item;
+SELECT * FROM tambah_item;
+SELECT * FROM item_baru;
