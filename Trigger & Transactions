@@ -1,49 +1,57 @@
 /** Menghapus 3 Tabel item_baru, jual_item, tambah_item jika pernah terbuat */
-DROP TABLE IF EXISTS item_baru;
+DROP TABLE IF EXISTS item_stok;
 DROP TABLE IF EXISTS jual_item;
 DROP TABLE IF EXISTS tambah_item;
 
+/** Menghapus 2 Trigger jika pernah terbuat */
+DROP TRIGGER IF EXISTS newJualitem;
+DROP TRIGGER IF EXISTS newTambahitem;
 
 /** Membuat 3 Tabel baru */
-CREATE TABLE item_baru (id INTEGER PRIMARY KEY, nama_barang TEXT, stok_barang INTEGER);
-CREATE TABLE jual_item (id INTEGER PRIMARY KEY, itembaru_id INTEGER, itemtambah_id INTEGER, nb_jual TEXT, stok_jual INTEGER);
-CREATE TABLE tambah_item (id INTEGER PRIMARY KEY, itembaru2_id INTEGER, itemjual_id INTEGER, nb_tambah TEXT, stok_tambah INTEGER);
+CREATE TABLE item_stok (id INTEGER PRIMARY KEY, nama_barang TEXT, stok_barang INTEGER, tanggalstok_tambah TEXT, tanggalstok_jual TEXT);
+CREATE TABLE jual_item (id INTEGER PRIMARY KEY, itemjual_id INTEGER, nb_jual TEXT, stok_jual INTEGER, tanggal_jual TEXT);
+CREATE TABLE tambah_item (id INTEGER PRIMARY KEY, itemtambah_id INTEGER, nb_tambah TEXT, stok_tambah INTEGER, tanggal_tambah TEXT);
 
 /** Menambahkan barang dan stocknya menggunakan fitur Transaction */
 BEGIN TRANSACTION;
-    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Pensil', 50);
-    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Pulpen', 100);
-    INSERT INTO item_baru (nama_barang, stok_barang) VALUES ('Buku Tulis', 100);
+    INSERT INTO item_stok (nama_barang, stok_barang) VALUES ('Pensil', 50);
+    INSERT INTO item_stok (nama_barang, stok_barang) VALUES ('Pulpen', 100);
+    INSERT INTO item_stok (nama_barang, stok_barang) VALUES ('Buku Tulis', 100);
 END TRANSACTION;
 
 /** Membuat TRIGGER untuk penjualan item */
 CREATE TRIGGER newJualitem AFTER INSERT ON jual_item
     BEGIN
-        UPDATE item_baru SET stok_barang = stok_barang - NEW.stok_jual
-        WHERE id = NEW.itembaru_id;
+        UPDATE item_stok SET stok_barang = stok_barang - NEW.stok_jual WHERE item_stok.id = NEW.itemjual_id;
+        UPDATE item_stok SET tanggalstok_jual = DATETIME('now', '+7 hours') WHERE item_stok.id = NEW.itemjual_id;
+        UPDATE jual_item SET tanggal_jual = DATETIME('now', '+7 hours') WHERE id = NEW.id;
    END;
+   
    
 /** Membuat TRIGGER untuk Penambahan Item */
 CREATE TRIGGER newTambahitem AFTER INSERT ON tambah_item
     BEGIN
-        UPDATE item_baru SET stok_barang = stok_barang + NEW.stok_tambah
-        WHERE id = NEW.itembaru2_id;
+        UPDATE item_stok SET stok_barang = stok_barang + NEW.stok_tambah WHERE item_stok.id = NEW.itemtambah_id;
+        UPDATE item_stok SET tanggalstok_tambah = DATETIME('now', '+7 hours') WHERE item_stok.id = NEW.itemtambah_id;
+        UPDATE tambah_item SET tanggal_tambah = DATETIME('now', '+7 hours') WHERE id = NEW.id;
     END;
 
 /** Proses Penjualan barang */
 BEGIN TRANSACTION;
-INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 1, 'Pensil', 25);
-INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
-INSERT INTO jual_item (itembaru_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
+INSERT INTO jual_item (itemjual_id, nb_jual, stok_jual) VALUES ( 1, 'Pensil', 25);
+INSERT INTO jual_item (itemjual_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
+INSERT INTO jual_item (itemjual_id, nb_jual, stok_jual) VALUES ( 2, 'Pulpen', 50);
 END TRANSACTION;
 
 /** Proses Penambahan barang */
 BEGIN TRANSACTION;
-    INSERT INTO tambah_item (itembaru2_id, nb_tambah, stok_tambah) VALUES ( 1, 'Pensil', 25);
-    INSERT INTO tambah_item (itembaru2_id, nb_tambah, stok_tambah) VALUES ( 2, 'Pulpen', 50);
+    INSERT INTO tambah_item (itemtambah_id, nb_tambah, stok_tambah) VALUES ( 1, 'Pensil', 25);
+    INSERT INTO tambah_item (itemtambah_id, nb_tambah, stok_tambah) VALUES ( 2, 'Pulpen', 50);
 END TRANSACTION;
 
 /** Untuk Menampilkan Hasil Tabel */
 SELECT * FROM jual_item;
 SELECT * FROM tambah_item;
-SELECT * FROM item_baru;
+SELECT * FROM item_stok;
+
+/** Tanggal dan Jam yang digunakan adalah Waktu Indonesia Barat */
